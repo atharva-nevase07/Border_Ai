@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --border: 217 32% 17%;
+  }
+
+  body {
+    @apply bg-[#070A0F] text-slate-100 antialiased font-sans overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200;
+  }
+}
+
+/* Tactical Command Center Aesthetics */
+.tactical-panel {
+  @apply bg-[#0B0F17]/90 border border-slate-800/80 backdrop-blur-md rounded-lg shadow-xl shadow-black/40;
+}
+
+.tactical-panel-hover {
+  @apply transition-all duration-200 hover:border-slate-700/80 hover:bg-[#0E1420]/95;
+}
+
+.tactical-glow-red {
+  box-shadow: 0 0 15px -2px rgba(239, 68, 68, 0.4);
+}
+
+.tactical-glow-cyan {
+  box-shadow: 0 0 15px -2px rgba(6, 182, 212, 0.35);
+}
+
+.tactical-glow-green {
+  box-shadow: 0 0 15px -2px rgba(16, 185, 129, 0.35);
+}
+
+/* Custom Tactical Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070A0F;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Military Grid Background */
+.bg-tactical-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(30, 41, 59, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 41, 59, 0.15) 1px, transparent 1px);
+}
+
+/* Radar Scan Line effect */
+.radar-overlay {
+  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+}
