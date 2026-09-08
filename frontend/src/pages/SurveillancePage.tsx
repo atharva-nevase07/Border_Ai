@@ -115,12 +115,39 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
           {/* Main Video Screen with Canvas Overlays (8 cols) */}
           <div className="lg:col-span-8 space-y-4">
             <div className="tactical-panel p-2">
-              <VideoCanvas
-                camera={activeCam}
-                zones={camZones}
-                onSaveZone={onSaveZone}
-                isDemoIntrusionActive={activeCam.camera_id === 'C-07'}
-              />
+              {selectedCameraId === 'PHONE-01' ? (
+                <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
+                  <div className="absolute top-3 left-3 z-10 flex items-center gap-2 font-mono text-xs">
+                    <span className="bg-black/80 px-2.5 py-1 rounded text-cyan-400 font-bold border border-cyan-700/60">
+                      EXTERNAL MOBILE NODE
+                    </span>
+                    <span className="bg-emerald-950/80 text-emerald-400 border border-emerald-700 px-2 py-1 rounded flex items-center gap-1.5 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      LIVE STREAM
+                    </span>
+                  </div>
+
+                  <img
+                    src="/api/cameras/live/phone"
+                    alt="External Mobile Node"
+                    title="External Mobile Node"
+                    className="w-full h-full object-cover"
+                  />
+
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between font-mono text-xs text-slate-300 bg-black/80 px-3 py-1.5 rounded border border-slate-800 backdrop-blur-sm z-10">
+                    <span className="text-cyan-300 font-semibold">External Mobile Node</span>
+                    <span className="text-slate-400">Endpoint: /api/cameras/live/phone</span>
+                    <span className="text-emerald-400 font-bold">● ACTIVE MOBILE NODE</span>
+                  </div>
+                </div>
+              ) : (
+                <VideoCanvas
+                  camera={activeCam}
+                  zones={camZones}
+                  onSaveZone={onSaveZone}
+                  isDemoIntrusionActive={activeCam.camera_id === 'C-07'}
+                />
+              )}
             </div>
 
             {/* Camera Metrics bar */}
@@ -128,25 +155,31 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
               <div className="flex items-center gap-4">
                 <div>
                   <span className="text-slate-400 text-[10px]">CAMERA ID:</span>
-                  <div className="font-bold text-slate-100">{activeCam.camera_id}</div>
+                  <div className="font-bold text-slate-100">
+                    {selectedCameraId === 'PHONE-01' ? 'MOBILE-01' : activeCam.camera_id}
+                  </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
                 <div>
                   <span className="text-slate-400 text-[10px]">SECTOR:</span>
-                  <div className="text-slate-200">{activeCam.sector}</div>
+                  <div className="text-slate-200">
+                    {selectedCameraId === 'PHONE-01' ? 'Sector B (Mobile Patrol)' : activeCam.sector}
+                  </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
                 <div>
                   <span className="text-slate-400 text-[10px]">FRAME RATE:</span>
-                  <div className="text-emerald-400 font-bold">{activeCam.fps.toFixed(1)} FPS</div>
+                  <div className="text-emerald-400 font-bold">
+                    {selectedCameraId === 'PHONE-01' ? '30.0 FPS' : `${activeCam.fps.toFixed(1)} FPS`}
+                  </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
                 <div>
                   <span className="text-slate-400 text-[10px]">THREAT LEVEL:</span>
                   <div>
                     <ThreatBadge
-                      severity={activeCam.camera_id === 'C-07' ? 'CRITICAL' : 'NORMAL'}
-                      score={activeCam.camera_id === 'C-07' ? 87 : 10}
+                      severity={selectedCameraId === 'PHONE-01' ? 'LOW' : activeCam.camera_id === 'C-07' ? 'CRITICAL' : 'NORMAL'}
+                      score={selectedCameraId === 'PHONE-01' ? 25 : activeCam.camera_id === 'C-07' ? 87 : 10}
                       showScore
                     />
                   </div>
@@ -154,7 +187,7 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
               </div>
 
               <div className="text-[11px] text-slate-400">
-                Resolution: <span className="text-slate-200 font-semibold">{activeCam.resolution}</span> • Latency: <span className="text-cyan-400 font-semibold">{activeCam.latency_ms}ms</span>
+                Resolution: <span className="text-slate-200 font-semibold">{selectedCameraId === 'PHONE-01' ? '1080p Mobile' : activeCam.resolution}</span> • Latency: <span className="text-cyan-400 font-semibold">{selectedCameraId === 'PHONE-01' ? '45ms' : `${activeCam.latency_ms}ms`}</span>
               </div>
             </div>
           </div>
@@ -167,6 +200,37 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
             </div>
 
             <div className="space-y-2 max-h-[680px] overflow-y-auto pr-1">
+              {/* External Mobile Node Card in Selector */}
+              <div
+                onClick={() => setSelectedCameraId('PHONE-01')}
+                className={`p-3 rounded-lg border transition-all cursor-pointer font-mono text-xs ${
+                  selectedCameraId === 'PHONE-01'
+                    ? 'bg-cyan-950/50 border-cyan-400 text-cyan-200 shadow-md shadow-cyan-950/40'
+                    : 'bg-[#0B0F17] border-cyan-800/40 hover:border-cyan-600 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="font-bold text-cyan-300">MOBILE-01</span>
+                    <span className="text-[11px] text-slate-400">• External Mobile Node</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                    LIVE
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-sans mt-1">
+                  Mobile Tactical Patrol (http://10.183.244.231:8080/video)
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
+                  <span className="text-emerald-400 font-semibold">IP WEBCAM FEED</span>
+                  <span>10.183.244.231</span>
+                  <span className="text-cyan-400 font-semibold">ONLINE</span>
+                </div>
+              </div>
+
               {filteredCameras.map((cam) => {
                 const isSelected = cam.camera_id === selectedCameraId;
                 const isThreat = cam.camera_id === 'C-07';
@@ -210,7 +274,51 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
       {/* Multi-Grid Views (2x2 and 3x3) */}
       {layoutMode !== 'focused' && (
         <div className={`grid gap-4 ${layoutMode === '2x2' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-          {filteredCameras.slice(0, layoutMode === '2x2' ? 4 : 9).map((cam) => {
+          {/* External Mobile Node in Grid */}
+          <div
+            onClick={() => {
+              setSelectedCameraId('PHONE-01');
+              setLayoutMode('focused');
+            }}
+            className="bg-[#0B0F17] rounded-xl border border-cyan-500/70 p-2 cursor-pointer transition-all hover:border-cyan-400 group shadow-lg shadow-cyan-950/20"
+          >
+            <div className="relative aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="absolute top-2 left-2 flex items-center gap-2 z-10 font-mono text-xs">
+                <span className="px-2 py-0.5 rounded bg-black/80 text-cyan-400 font-bold border border-cyan-800">
+                  MOBILE-01
+                </span>
+                <span className="text-[10px] text-slate-300 bg-black/60 px-1.5 py-0.5 rounded">
+                  Sector B (Patrol Unit)
+                </span>
+              </div>
+
+              <div className="absolute top-2 right-2 z-10">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-700/60">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  LIVE STREAM
+                </span>
+              </div>
+
+              {/* Stream Image */}
+              <img
+                src="/api/cameras/live/phone"
+                alt="External Mobile Node"
+                title="External Mobile Node"
+                className="w-full h-full object-cover rounded"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.opacity = '0.7';
+                }}
+              />
+
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between font-mono text-[10px] text-slate-300 bg-black/75 px-2.5 py-1 rounded backdrop-blur-sm z-10">
+                <span className="font-semibold text-cyan-300">External Mobile Node</span>
+                <span className="text-slate-400">10.183.244.231:8080</span>
+                <span className="text-cyan-400">CLICK TO FOCUS</span>
+              </div>
+            </div>
+          </div>
+
+          {filteredCameras.slice(0, layoutMode === '2x2' ? 3 : 8).map((cam) => {
             const isThreat = cam.camera_id === 'C-07';
             return (
               <div
