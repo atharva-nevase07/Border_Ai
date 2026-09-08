@@ -55,7 +55,7 @@ class DetectionResponse(DetectionBase):
 
 class EvidenceResponse(BaseModel):
     id: int
-    incident_id: int
+    incident_id: Optional[int] = None
     snapshot_path: str
     video_path: Optional[str] = None
     timestamp: datetime.datetime
@@ -64,6 +64,15 @@ class EvidenceResponse(BaseModel):
     confidence: float
     metadata_json: Optional[str] = "{}"
     model_config = ConfigDict(from_attributes=True)
+
+class SnapshotRequest(BaseModel):
+    stream_url: Optional[str] = None
+    incident_id: Optional[int] = None
+    camera_id: Optional[str] = "PHONE-01"
+    object_type: Optional[str] = "PERSON"
+    track_id: Optional[str] = "#MOBILE-01"
+    confidence: Optional[float] = 0.95
+    metadata: Optional[Dict[str, Any]] = None
 
 class AlertBase(BaseModel):
     incident_id: Optional[int] = None

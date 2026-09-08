@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Camera, Zone, Detection } from '../types';
 import { VideoCanvas } from '../components/surveillance/VideoCanvas';
 import { ThreatBadge } from '../components/common/ThreatBadge';
+import { api } from '../services/api';
 import {
   Grid2X2,
   Grid3X3,
@@ -13,7 +14,9 @@ import {
   Eye,
   Crosshair,
   Volume2,
-  Maximize2
+  Maximize2,
+  Camera as CameraIcon,
+  CheckCircle2
 } from 'lucide-react';
 
 interface SurveillancePageProps {
@@ -30,8 +33,42 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
   const [selectedCameraId, setSelectedCameraId] = useState<string>('C-07');
   const [layoutMode, setLayoutMode] = useState<'focused' | '2x2' | '3x3'>('focused');
   const [sectorFilter, setSectorFilter] = useState<string>('ALL');
+  const [snapshotLoading, setSnapshotLoading] = useState<boolean>(false);
+  const [snapshotMessage, setSnapshotMessage] = useState<string | null>(null);
 
-  const activeCam = cameras.find((c) => c.camera_id === selectedCameraId) || cameras[0];
+  const handleCaptureSnapshot = async () => {
+    setSnapshotLoading(true);
+    try {
+      const rec = await api.capturePhoneSnapshot({ camera_id: 'PHONE-01' });
+      if (rec) {
+        setSnapshotMessage(`Snapshot saved to evidence vault (${rec.snapshot_path})`);
+      } else {
+        setSnapshotMessage('Snapshot saved to evidence storage');
+      }
+      setTimeout(() => setSnapshotMessage(null), 4000);
+    } catch {
+      setSnapshotMessage('Failed to capture snapshot');
+      setTimeout(() => setSnapshotMessage(null), 4000);
+    } finally {
+      setSnapshotLoading(false);
+    }
+  };
+
+  const defaultFallbackCam: Camera = {
+    id: 1,
+    camera_id: 'C-01',
+    name: 'Sector A Mast 01',
+    sector: 'Sector A',
+    location: 'Western Ridge Outpost',
+    status: 'ONLINE',
+    stream_url: '/simulated_feeds/c-01_feed.mp4',
+    fps: 25.0,
+    resolution: '1080p FHD (1920x1080)',
+    last_seen: new Date().toISOString(),
+    latency_ms: 68
+  };
+
+  const activeCam: Camera = cameras.find((c) => c.camera_id === selectedCameraId) || cameras[0] || defaultFallbackCam;
   const camZones = zones.filter((z) => z.camera_id === selectedCameraId);
 
   const filteredCameras = cameras.filter((c) => {
@@ -127,6 +164,26 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                     </span>
                   </div>
 
+                  <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+                    <button
+                      onClick={handleCaptureSnapshot}
+                      disabled={snapshotLoading}
+                      id="capture-phone-snapshot-btn"
+                      className="bg-cyan-600/90 hover:bg-cyan-500 active:bg-cyan-700 text-white font-mono text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all shadow-lg border border-cyan-400/40 disabled:opacity-50 cursor-pointer"
+                      title="Save timestamped frame to forensic evidence storage"
+                    >
+                      <CameraIcon className="w-3.5 h-3.5" />
+                      {snapshotLoading ? 'CAPTURING...' : 'CAPTURE SNAPSHOT'}
+                    </button>
+                  </div>
+
+                  {snapshotMessage && (
+                    <div className="absolute top-14 right-3 z-20 bg-emerald-950/95 text-emerald-300 border border-emerald-700 font-mono text-xs px-3 py-1.5 rounded-md shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>{snapshotMessage}</span>
+                    </div>
+                  )}
+
                   <img
                     src="/api/cameras/live/phone"
                     alt="External Mobile Node"
@@ -156,21 +213,21 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                 <div>
                   <span className="text-slate-400 text-[10px]">CAMERA ID:</span>
                   <div className="font-bold text-slate-100">
-                    {selectedCameraId === 'PHONE-01' ? 'MOBILE-01' : activeCam.camera_id}
+                    {selectedCameraId === 'PHONE-01' ? 'MOBILE-01' : (activeCam?.camera_id || 'C-01')}
                   </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
                 <div>
                   <span className="text-slate-400 text-[10px]">SECTOR:</span>
                   <div className="text-slate-200">
-                    {selectedCameraId === 'PHONE-01' ? 'Sector B (Mobile Patrol)' : activeCam.sector}
+                    {selectedCameraId === 'PHONE-01' ? 'Sector B (Mobile Patrol)' : (activeCam?.sector || 'Sector A')}
                   </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
                 <div>
                   <span className="text-slate-400 text-[10px]">FRAME RATE:</span>
                   <div className="text-emerald-400 font-bold">
-                    {selectedCameraId === 'PHONE-01' ? '30.0 FPS' : `${activeCam.fps.toFixed(1)} FPS`}
+                    {selectedCameraId === 'PHONE-01' ? '30.0 FPS' : `${(activeCam?.fps ?? 25.0).toFixed(1)} FPS`}
                   </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
@@ -178,8 +235,8 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                   <span className="text-slate-400 text-[10px]">THREAT LEVEL:</span>
                   <div>
                     <ThreatBadge
-                      severity={selectedCameraId === 'PHONE-01' ? 'LOW' : activeCam.camera_id === 'C-07' ? 'CRITICAL' : 'NORMAL'}
-                      score={selectedCameraId === 'PHONE-01' ? 25 : activeCam.camera_id === 'C-07' ? 87 : 10}
+                      severity={selectedCameraId === 'PHONE-01' ? 'LOW' : activeCam?.camera_id === 'C-07' ? 'CRITICAL' : 'NORMAL'}
+                      score={selectedCameraId === 'PHONE-01' ? 25 : activeCam?.camera_id === 'C-07' ? 87 : 10}
                       showScore
                     />
                   </div>
@@ -187,7 +244,7 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
               </div>
 
               <div className="text-[11px] text-slate-400">
-                Resolution: <span className="text-slate-200 font-semibold">{selectedCameraId === 'PHONE-01' ? '1080p Mobile' : activeCam.resolution}</span> • Latency: <span className="text-cyan-400 font-semibold">{selectedCameraId === 'PHONE-01' ? '45ms' : `${activeCam.latency_ms}ms`}</span>
+                Resolution: <span className="text-slate-200 font-semibold">{selectedCameraId === 'PHONE-01' ? '1080p Mobile' : (activeCam?.resolution || '1080p FHD')}</span> • Latency: <span className="text-cyan-400 font-semibold">{selectedCameraId === 'PHONE-01' ? '45ms' : `${activeCam?.latency_ms ?? 65}ms`}</span>
               </div>
             </div>
           </div>

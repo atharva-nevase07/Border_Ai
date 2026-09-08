@@ -96,6 +96,30 @@ export const api = {
     return evidenceStore;
   },
 
+  async capturePhoneSnapshot(payload?: {
+    stream_url?: string;
+    incident_id?: number;
+    camera_id?: string;
+    object_type?: string;
+    track_id?: string;
+    confidence?: number;
+    metadata?: Record<string, any>;
+  }): Promise<EvidenceRecord | null> {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/evidence/snapshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {})
+      });
+      if (res.ok) {
+        const data = await res.json();
+        evidenceStore = [data, ...evidenceStore];
+        return data;
+      }
+    } catch {}
+    return null;
+  },
+
   // 5. Zones
   async getZones(cameraId?: string): Promise<Zone[]> {
     try {

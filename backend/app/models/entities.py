@@ -74,7 +74,7 @@ class Evidence(Base):
     __tablename__ = "evidence"
 
     id = Column(Integer, primary_key=True, index=True)
-    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=False)
+    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True)
     snapshot_path = Column(String(255), nullable=False)
     video_path = Column(String(255), nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
