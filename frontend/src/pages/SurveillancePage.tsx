@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, Zone, Detection } from '../types';
 import { VideoCanvas } from '../components/surveillance/VideoCanvas';
 import { ThreatBadge } from '../components/common/ThreatBadge';
@@ -13,7 +13,12 @@ import {
   Eye,
   Crosshair,
   Volume2,
-  Maximize2
+  Maximize2,
+  ShieldAlert,
+  Radio,
+  Wifi,
+  Zap,
+  X
 } from 'lucide-react';
 
 interface SurveillancePageProps {
@@ -30,6 +35,29 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
   const [selectedCameraId, setSelectedCameraId] = useState<string>('C-07');
   const [layoutMode, setLayoutMode] = useState<'focused' | '2x2' | '3x3'>('focused');
   const [sectorFilter, setSectorFilter] = useState<string>('ALL');
+  const [isThreatBannerDismissed, setIsThreatBannerDismissed] = useState<boolean>(false);
+  const [dispatchStatus, setDispatchStatus] = useState<string | null>(null);
+
+  // Dynamic Telemetry State for External Mobile Node
+  const [telemetry, setTelemetry] = useState({
+    fps: 29.8,
+    latency: 42,
+    bitrate: 4.8,
+    health: 99.4
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTelemetry({
+        fps: 29.5 + Math.random() * 0.8,
+        latency: 40 + Math.floor(Math.random() * 6),
+        bitrate: 4.7 + Math.random() * 0.3,
+        health: Number((99.1 + Math.random() * 0.8).toFixed(1))
+      });
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const activeCam = cameras.find((c) => c.camera_id === selectedCameraId) || cameras[0];
   const camZones = zones.filter((z) => z.camera_id === selectedCameraId);
@@ -41,6 +69,74 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
 
   return (
     <div className="p-6 space-y-6 max-w-[1700px] mx-auto animate-in fade-in">
+      {/* High-Confidence Person Detection Threat Warning Banner */}
+      {!isThreatBannerDismissed && (
+        <div className="relative overflow-hidden bg-gradient-to-r from-red-950/95 via-red-900/90 to-red-950/95 border-2 border-red-500/80 rounded-xl p-4 shadow-[0_0_30px_rgba(239,68,68,0.35)] animate-pulse transition-all">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-lg bg-red-600/30 border border-red-500/60 text-red-400 shrink-0 mt-0.5">
+                <ShieldAlert className="w-6 h-6 text-red-400 animate-ping" />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 rounded bg-red-600 text-white font-mono text-[10px] font-extrabold tracking-wider uppercase">
+                    HIGH CONFIDENCE THREAT
+                  </span>
+                  <h2 className="text-sm md:text-base font-mono font-bold text-red-100 tracking-wide">
+                    PERSON BREACH DETECTED — CAM C-07 (SECTOR C)
+                  </h2>
+                  <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-700/80">
+                    SCORE: 87/100 (CRITICAL)
+                  </span>
+                </div>
+
+                <div className="text-xs font-mono text-slate-200 flex flex-wrap items-center gap-x-4 gap-y-1 pt-0.5">
+                  <span>Target: <strong className="text-red-300">PERSON #102</strong></span>
+                  <span>Confidence: <strong className="text-emerald-300">96.4%</strong></span>
+                  <span>Zone: <strong className="text-red-300">SECTOR C - RESTRICTED BOUNDARY</strong></span>
+                  <span>Vector: <strong className="text-cyan-300">NORTH-EAST @ 4.8 km/h</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 font-mono text-xs shrink-0 self-end md:self-center">
+              {selectedCameraId !== 'C-07' && (
+                <button
+                  onClick={() => {
+                    setSelectedCameraId('C-07');
+                    setLayoutMode('focused');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition-all shadow-md flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>FOCUS CAM C-07</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setDispatchStatus('QRT ALPHA DISPATCHED TO SECTOR C');
+                  setTimeout(() => setDispatchStatus(null), 4000);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-700/60 font-bold transition-all flex items-center gap-1.5"
+              >
+                <Radio className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{dispatchStatus || 'DISPATCH QRT'}</span>
+              </button>
+
+              <button
+                onClick={() => setIsThreatBannerDismissed(true)}
+                className="p-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700 transition-colors"
+                title="Acknowledge & Dismiss Banner"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
@@ -127,6 +223,38 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                     </span>
                   </div>
 
+                  {/* Top Right Corner Telemetry Tags Overlay */}
+                  <div className="absolute top-3 right-3 z-10 flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                    {/* FPS Counter Tag */}
+                    <div className="bg-black/85 border border-cyan-500/40 text-cyan-300 px-2.5 py-1 rounded backdrop-blur-md flex items-center gap-1.5 shadow-md">
+                      <Zap className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                      <span className="text-slate-400">FPS:</span>
+                      <span className="font-bold text-cyan-300">{telemetry.fps.toFixed(1)}</span>
+                    </div>
+
+                    {/* Latency Tag */}
+                    <div className="bg-black/85 border border-cyan-500/40 text-cyan-300 px-2.5 py-1 rounded backdrop-blur-md flex items-center gap-1.5 shadow-md">
+                      <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-slate-400">LATENCY:</span>
+                      <span className="font-bold text-emerald-400">{telemetry.latency}ms</span>
+                      <span className="text-[9px] text-slate-500">(±2ms)</span>
+                    </div>
+
+                    {/* Bitrate & Quality Tag */}
+                    <div className="bg-black/85 border border-slate-800 text-slate-300 px-2.5 py-1 rounded backdrop-blur-md flex items-center gap-1.5 hidden sm:flex">
+                      <Wifi className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="font-semibold text-slate-200">{telemetry.bitrate.toFixed(1)} Mbps</span>
+                      <span className="text-[9px] text-emerald-400 font-bold">1080p@30</span>
+                    </div>
+
+                    {/* Connection Health Tag */}
+                    <div className="bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 px-2.5 py-1 rounded backdrop-blur-md flex items-center gap-1.5 shadow-md font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span>HEALTH: {telemetry.health}%</span>
+                      <span className="text-[9px] text-emerald-300 bg-emerald-900/60 px-1 py-0.5 rounded border border-emerald-700 hidden lg:inline">5G WEBRTC</span>
+                    </div>
+                  </div>
+
                   <img
                     src="/api/cameras/live/phone"
                     alt="External Mobile Node"
@@ -170,7 +298,7 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                 <div>
                   <span className="text-slate-400 text-[10px]">FRAME RATE:</span>
                   <div className="text-emerald-400 font-bold">
-                    {selectedCameraId === 'PHONE-01' ? '30.0 FPS' : `${activeCam.fps.toFixed(1)} FPS`}
+                    {selectedCameraId === 'PHONE-01' ? `${telemetry.fps.toFixed(1)} FPS` : `${activeCam.fps.toFixed(1)} FPS`}
                   </div>
                 </div>
                 <div className="h-6 w-px bg-slate-800" />
@@ -187,7 +315,7 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
               </div>
 
               <div className="text-[11px] text-slate-400">
-                Resolution: <span className="text-slate-200 font-semibold">{selectedCameraId === 'PHONE-01' ? '1080p Mobile' : activeCam.resolution}</span> • Latency: <span className="text-cyan-400 font-semibold">{selectedCameraId === 'PHONE-01' ? '45ms' : `${activeCam.latency_ms}ms`}</span>
+                Resolution: <span className="text-slate-200 font-semibold">{selectedCameraId === 'PHONE-01' ? '1080p Mobile' : activeCam.resolution}</span> • Latency: <span className="text-cyan-400 font-semibold">{selectedCameraId === 'PHONE-01' ? `${telemetry.latency}ms` : `${activeCam.latency_ms}ms`}</span>
               </div>
             </div>
           </div>
@@ -225,9 +353,9 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                 </div>
 
                 <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
-                  <span className="text-emerald-400 font-semibold">IP WEBCAM FEED</span>
-                  <span>10.183.244.231</span>
-                  <span className="text-cyan-400 font-semibold">ONLINE</span>
+                  <span className="text-emerald-400 font-semibold">{telemetry.fps.toFixed(1)} FPS</span>
+                  <span>LATENCY: {telemetry.latency}ms</span>
+                  <span className="text-cyan-400 font-semibold">HEALTH: {telemetry.health}%</span>
                 </div>
               </div>
 
@@ -292,10 +420,17 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
                 </span>
               </div>
 
-              <div className="absolute top-2 right-2 z-10">
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-700/60">
+              {/* Telemetry Tags in Grid View Top Right */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 font-mono text-[10px]">
+                <span className="bg-black/85 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800 font-bold">
+                  {telemetry.fps.toFixed(1)} FPS
+                </span>
+                <span className="bg-black/85 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800 font-bold">
+                  {telemetry.latency}ms
+                </span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-700/60">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE STREAM
+                  LIVE
                 </span>
               </div>
 
@@ -312,7 +447,7 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
 
               <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between font-mono text-[10px] text-slate-300 bg-black/75 px-2.5 py-1 rounded backdrop-blur-sm z-10">
                 <span className="font-semibold text-cyan-300">External Mobile Node</span>
-                <span className="text-slate-400">10.183.244.231:8080</span>
+                <span className="text-emerald-400 font-bold">HEALTH: {telemetry.health}%</span>
                 <span className="text-cyan-400">CLICK TO FOCUS</span>
               </div>
             </div>
@@ -371,3 +506,4 @@ export const SurveillancePage: React.FC<SurveillancePageProps> = ({
     </div>
   );
 };
+
